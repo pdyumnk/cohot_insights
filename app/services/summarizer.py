@@ -1,4 +1,4 @@
-"""Deterministic stand-ins for the two model calls.
+"""Deterministic summary and tag extraction.
 
 Deterministic on purpose: the content cache is only valid if the same content always
 produces the same result.

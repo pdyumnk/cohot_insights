@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from app.domain import Status, build_result, content_fields, failed_stage, hash_content
 from app.schemas.documents import DocumentCreate, to_document_out
-from app.services import mock_ai
+from app.services import summarizer
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -25,10 +25,10 @@ def stored(content: str, version: int, result_for: tuple[int, str] | None = None
     return doc
 
 
-def test_mock_ai_is_deterministic():
+def test_summarizer_is_deterministic():
     text = "Redis caches results while MongoDB stores documents. Redis is fast. " * 5
-    assert mock_ai.summarize(text) == mock_ai.summarize(text)
-    tags = mock_ai.extract_tags(mock_ai.summarize(text))
+    assert summarizer.summarize(text) == summarizer.summarize(text)
+    tags = summarizer.extract_tags(summarizer.summarize(text))
     assert tags[0] == "redis" and len(tags) <= 5
     assert "while" not in tags
 
