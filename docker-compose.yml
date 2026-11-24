@@ -1,0 +1,68 @@
+x-app-env: &app-env
+  MONGO_URL: mongodb://mongo:27017
+  MONGO_DB: ${MONGO_DB:-cohort_insights}
+  REDIS_URL: redis://redis:6379/0
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  MAX_ACTIVE_PER_USER: ${MAX_ACTIVE_PER_USER:-3}
+  ACTIVE_SET_TTL_S: ${ACTIVE_SET_TTL_S:-3600}
+  CACHE_TTL_S: ${CACHE_TTL_S:-604800}
+  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-3}
+  STAGE_LEASE_S: ${STAGE_LEASE_S:-60}
+  STAGE_TIME_SCALE: ${STAGE_TIME_SCALE:-1}
+  FAILURE_RATE: ${FAILURE_RATE:-0.1}
+  MAX_STAGE_ATTEMPTS: ${MAX_STAGE_ATTEMPTS:-3}
+  RETRY_BASE_DELAY_S: ${RETRY_BASE_DELAY_S:-1}
+
+x-depends: &depends
+  mongo:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+
+services:
+  api:
+    build: .
+    environment:
+      <<: *app-env
+      EMBEDDED_WORKERS: "false"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on: *depends
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://localhost:8000/health').status != 200)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    environment: *app-env
+    depends_on: *depends
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  mongo_data:
+  redis_data:
