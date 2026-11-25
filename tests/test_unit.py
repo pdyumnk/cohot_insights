@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from app.domain import Status, build_result, content_fields, failed_stage, hash_content
 from app.schemas.documents import DocumentCreate, to_document_out
-from app.services import summarizer
+from app.services import text_digest
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -25,10 +25,10 @@ def stored(content: str, version: int, result_for: tuple[int, str] | None = None
     return doc
 
 
-def test_summarizer_is_deterministic():
+def test_text_digest_is_deterministic():
     text = "Redis caches results while MongoDB stores documents. Redis is fast. " * 5
-    assert summarizer.summarize(text) == summarizer.summarize(text)
-    tags = summarizer.extract_tags(summarizer.summarize(text))
+    assert text_digest.build_summary(text) == text_digest.build_summary(text)
+    tags = text_digest.top_keywords(text_digest.build_summary(text))
     assert tags[0] == "redis" and len(tags) <= 5
     assert "while" not in tags
 

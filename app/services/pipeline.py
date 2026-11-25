@@ -29,7 +29,7 @@ from pymongo.errors import PyMongoError
 from app.core.config import Settings
 from app.domain import Stage, build_result, utcnow
 from app.repositories.documents import DocumentRepository
-from app.services import summarizer
+from app.services import text_digest
 from app.services.content_cache import ContentCache
 from app.services.rate_limiter import ActiveJobLimiter
 
@@ -123,7 +123,7 @@ class PipelineWorker:
     async def _succeed(self, stage: Stage, doc: dict[str, Any], token: str, log: dict) -> None:
         now = utcnow()
         if stage is Stage.PROCESSING:
-            summary = summarizer.summarize(doc["content"])
+            summary = text_digest.build_summary(doc["content"])
             if await self.repo.complete_processing(doc, token, summary, now):
                 logger.info("processing completed", extra=log)
             else:
@@ -131,7 +131,7 @@ class PipelineWorker:
             return
 
         summary = doc["stages"]["processing"]["summary"]
-        tags = summarizer.extract_tags(summary)
+        tags = text_digest.top_keywords(summary)
         published = build_result(
             version=doc["content_version"], content_hash=doc["content_hash"],
             summary=summary, tags=tags, source="pipeline", now=now,

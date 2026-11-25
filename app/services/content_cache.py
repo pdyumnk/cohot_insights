@@ -3,7 +3,7 @@
 Key: `cache:v1:{content_hash}` -> {"summary", "tags"}, with a TTL. The key is a function of
 the content only — never of a document_id — so a PATCH (new content, new hash) can never
 pick up the old content's entry, and two documents with identical content share one.
-`v1` names the version of the summarizer: changing its algorithm bumps it, which
+`v1` names the version of text_digest: changing its algorithm bumps it, which
 invalidates every entry at once without a flush.
 
 Redis is a hot layer, MongoDB is the source of truth: on a Redis miss or outage we look for

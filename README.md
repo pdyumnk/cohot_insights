@@ -216,7 +216,7 @@ queued → processing → enriching → completed
   (`test_enriching_failure_keeps_summary_and_retry_skips_processing`).
 - Workers claim enriching jobs before new processing jobs, which finishes in-flight work
   and frees rate-limit slots sooner.
-- The summarizer is deterministic: the summary is the first 40 words, and the tags are the
+- `text_digest` is deterministic: the summary is the first 40 words, and the tags are the
   most frequent non-stopwords of the summary. The cache depends on this.
 
 ## Crosswalk (`client_doc_ref`)
@@ -273,7 +273,7 @@ against `ZCARD`.
 - `cache:v1:{sha256(content)}` → `{summary, tags}`, TTL 7 days, written when enriching
   completes. **Keyed by content, never by document**, so after a PATCH the new hash can't
   hit the old entry (`test_cache_is_keyed_by_content_not_document`). `v1` versions the
-  summarizer: changing the algorithm means bumping it, with no flush needed.
+  `text_digest` logic: changing the algorithm means bumping it, with no flush needed.
 - **MongoDB is the source of truth.** On a Redis miss or outage, the cache looks up any
   published `result` with that hash (index `result_content_hash`), then refills Redis. This
   is safe because a published result carries its own content hash, even when it's now stale
